@@ -167,7 +167,7 @@ const getUploadSignature = asyncHandler(async (req, res) => {
     const signature = cloudinary.utils.api_sign_request(
         {
             timestamp: timestamp,
-            folder: 'doordie_proofs',
+            folder: 'doorpay_proofs',
         },
         process.env.CLOUDINARY_API_SECRET
     );

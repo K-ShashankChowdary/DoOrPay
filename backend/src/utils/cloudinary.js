@@ -13,7 +13,7 @@ export const getUploadSignature = () => {
     // Optional: restrict uploads to a specific folder
     const signature = cloudinary.utils.api_sign_request({
         timestamp: timestamp,
-        folder: 'doordie_proofs'
+        folder: 'doorpay_proofs'
     }, process.env.CLOUDINARY_API_SECRET);
 
     return { 

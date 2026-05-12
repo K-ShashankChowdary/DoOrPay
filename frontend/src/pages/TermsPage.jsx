@@ -8,14 +8,14 @@ const TermsPage = () => {
         <div>
           <h2 className="text-xl font-bold mb-3">1) Agreement to Terms</h2>
           <p>
-            By accessing or using DoOrDie (the “Platform”), you agree to these Terms and to any policies referenced here. If you do not agree, please stop using the Platform.
+            By accessing or using DoOrPay (the “Platform”), you agree to these Terms and to any policies referenced here. If you do not agree, please stop using the Platform.
           </p>
         </div>
 
         <div>
           <h2 className="text-xl font-bold mb-3">2) What We Provide</h2>
           <p>
-            DoOrDie lets you create commitments with a monetary stake held in escrow, nominate a validator, submit proof, and route payouts automatically when tasks succeed or fail.
+            DoOrPay lets you create commitments with a monetary stake held in escrow, nominate a validator, submit proof, and route payouts automatically when tasks succeed or fail.
           </p>
         </div>
 

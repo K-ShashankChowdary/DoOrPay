@@ -42,7 +42,7 @@ const AppLayout = () => {
                                 <div className="w-8 h-8 rounded-xl flex items-center justify-center transform group-hover:scale-105 transition-transform duration-300 shadow-sm" style={{ background: 'var(--brand-grad)' }}>
                                     <span className="text-white font-black text-lg leading-none">D</span>
                                 </div>
-                                <span className="text-xl font-black text-slate-900 tracking-tight">DoOrDie</span>
+                                <span className="text-xl font-black text-slate-900 tracking-tight">DoOrPay</span>
                             </Link>
 
                             <nav className="hidden md:flex items-center space-x-1" aria-label="Global">

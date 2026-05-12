@@ -61,7 +61,7 @@ const SubmitProofModal = ({ contractId, isOpen, onClose, onSuccess }) => {
                     formData.append('signature', signature);
                     formData.append('timestamp', timestamp);
                     formData.append('api_key', apiKey);
-                    formData.append('folder', 'doordie_proofs');
+                    formData.append('folder', 'doorpay_proofs');
 
                     const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
                         method: 'POST',

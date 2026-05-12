@@ -1,1 +1,1 @@
-export const DB_NAME = "doordie";
+export const DB_NAME = "doorpay";

@@ -8,7 +8,7 @@ const ShippingPage = () => {
         <div>
           <h2 className="text-xl font-bold mb-3">1) Digital-Only Service</h2>
           <p>
-            DoOrDie provides a 100% digital product. No physical goods are shipped.
+            DoOrPay provides a 100% digital product. No physical goods are shipped.
           </p>
         </div>
 
