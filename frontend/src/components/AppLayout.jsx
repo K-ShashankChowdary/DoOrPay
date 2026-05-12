@@ -14,10 +14,16 @@ const AppLayout = () => {
             try {
                 const res = await contractService.getUserContracts();
                 const tasks = res.data.contracts || [];
-                const count = tasks.filter(t => {
+                const count = tasks.filter((t) => {
                     if (!t) return false;
-                    const validatorId = typeof t.validator === 'object' ? t.validator?.id : t.validator;
-                    return validatorId?.toString() === user?.id?.toString() && t.status === 'VALIDATING';
+                    const validatorId =
+                        typeof t.validator === 'object'
+                            ? t.validator?.id
+                            : t.validatorId ?? t.validator;
+                    return (
+                        validatorId?.toString() === user?.id?.toString() &&
+                        t.status === 'VALIDATING'
+                    );
                 }).length;
                 setValidationCount(count);
             } catch {
@@ -32,14 +38,14 @@ const AppLayout = () => {
     return (
         <div className="flex flex-col min-h-screen bg-slate-50/50">
             {/* Top Navigation Header */}
-            <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-xl border-b border-slate-200/80 shadow-[0_6px_24px_-12px_rgba(15,23,42,0.18)] transition-all duration-300">
+            <header className="app-header-shell sticky top-0 z-50 border-b border-slate-200/80 transition-all duration-300">
                 <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between items-center h-[72px] gap-4">
                         
                         {/* Logo & Navigation */}
                         <div className="flex items-center gap-8 min-w-0">
                             <Link to="/dashboard" className="flex-shrink-0 flex items-center gap-2 group cursor-pointer">
-                                <div className="w-8 h-8 rounded-xl flex items-center justify-center transform group-hover:scale-105 transition-transform duration-300 shadow-sm" style={{ background: 'var(--brand-grad)' }}>
+                                <div className="nav-mark w-8 h-8 rounded-xl flex items-center justify-center transform group-hover:scale-105 transition-transform duration-300" style={{ background: 'var(--brand-grad)' }}>
                                     <span className="text-white font-black text-lg leading-none">D</span>
                                 </div>
                                 <span className="text-xl font-black text-slate-900 tracking-tight">DoOrPay</span>
@@ -98,7 +104,7 @@ const AppLayout = () => {
             </header>
 
             {/* Mobile Navigation (bottom) */}
-            <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-xl border-t border-slate-200 shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.1)] pb-safe-area flex items-center px-2 py-2 gap-2 transform transition-all duration-500">
+            <div className="mobile-nav-shell md:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-slate-200/90 pb-safe-area flex items-center px-2 py-2 gap-2 transform transition-all duration-500">
                 <NavLink
                     to="/dashboard"
                     className={({ isActive }) =>
@@ -131,7 +137,7 @@ const AppLayout = () => {
             </div>
 
             {/* Main Content Area */}
-            <main className="flex-1 w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pb-24 md:pb-12 pt-6 flex flex-col slide-in relative z-10">
+            <main className="flex-1 w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pb-24 md:pb-12 pt-6 flex flex-col relative z-10">
                 <div className="flex-1">
                     <Outlet />
                 </div>

@@ -26,6 +26,14 @@ const CreateTaskModal = ({ onClose, onTaskCreated }) => {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === "Escape" && !loading) onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [loading, onClose]);
+
   // Debounce search query to not overwhelm API
   useEffect(() => {
     const fetchValidators = async () => {
@@ -53,6 +61,13 @@ const CreateTaskModal = ({ onClose, onTaskCreated }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    if (name === "stakeAmount") {
+      setFormData((prev) => ({
+        ...prev,
+        stakeAmount: value === "" ? "" : Number(value),
+      }));
+      return;
+    }
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -71,17 +86,23 @@ const CreateTaskModal = ({ onClose, onTaskCreated }) => {
       return;
     }
 
-    if (formData.stakeAmount < 50) {
+    const stake = Number(formData.stakeAmount);
+    if (!Number.isFinite(stake) || stake < 50) {
       setError("Amount must be at least ₹50.");
+      return;
+    }
+    const titleTrim = formData.title.trim();
+    if (!titleTrim) {
+      setError("Please enter a task title.");
       return;
     }
 
     setLoading(true);
     try {
       const result = await contractService.createContract({
-        title: formData.title,
-        description: formData.description,
-        stakeAmount: Number(formData.stakeAmount),
+        title: titleTrim,
+        description: formData.description.trim(),
+        stakeAmount: stake,
         deadline: formData.deadline,
         validatorId: formData.validator.id,
       });
@@ -100,8 +121,9 @@ const CreateTaskModal = ({ onClose, onTaskCreated }) => {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
-        onClick={onClose}
+        className="absolute inset-0 bg-slate-900/65 backdrop-blur-md"
+        onClick={() => !loading && onClose()}
+        aria-hidden
       ></div>
 
       {/* Modal Content */}

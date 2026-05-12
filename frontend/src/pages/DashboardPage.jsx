@@ -21,6 +21,7 @@ const DashboardPage = () => {
     const [balance, setBalance] = useState({ available: 0 });
     const [showBalance, setShowBalance] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    const [manualPageRefresh, setManualPageRefresh] = useState(false);
     const [topupAmount, setTopupAmount] = useState('');
     const [withdrawAmount, setWithdrawAmount] = useState('');
     const [topupLoading, setTopupLoading] = useState(false);
@@ -66,8 +67,12 @@ const DashboardPage = () => {
     }, [getWithdrawalHistory]);
 
     const handleManualRefresh = () => {
+        setManualPageRefresh(true);
         setLoading(true);
-        Promise.all([fetchTasks(), fetchBalance(), fetchWithdrawals()]).finally(() => setLoading(false));
+        Promise.all([fetchTasks(), fetchBalance(), fetchWithdrawals()]).finally(() => {
+            setLoading(false);
+            setManualPageRefresh(false);
+        });
     };
 
     useEffect(() => {
@@ -104,7 +109,11 @@ const DashboardPage = () => {
 
     const { activeCount, pendingCount, doneCount } = useMemo(() => ({
         activeCount: displayedTasks.filter(t => t && (t.status === 'ACTIVE' || t.status === 'VALIDATING')).length,
-        pendingCount: displayedTasks.filter(t => t && ((t.status === 'PENDING_PAYMENT' || t.status === 'PENDING_DEPOSIT') && new Date(t.deadline) > new Date())).length,
+        pendingCount: displayedTasks.filter((t) => {
+            if (!t || (t.status !== 'PENDING_PAYMENT' && t.status !== 'PENDING_DEPOSIT')) return false;
+            const d = new Date(t.deadline);
+            return Number.isFinite(d.getTime()) && d > new Date();
+        }).length,
         doneCount: displayedTasks.filter(t => t && (t.status === 'COMPLETED' || t.status === 'REJECTED' || t.status === 'FAILED')).length
     }), [displayedTasks]);
 
@@ -161,16 +170,18 @@ const DashboardPage = () => {
         <div className="page-shell bg-transparent">
             <div className="dashboard-container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
-                <header className="flex items-start sm:items-center justify-between gap-4 mb-8">
+                <header className="page-intro flex items-start sm:items-center justify-between gap-4 mb-8">
                     <div className="flex items-center gap-3 min-w-0">
                         <div>
                             <div className="flex items-center gap-3">
                                 <h1 className="text-2xl sm:text-3xl font-black text-slate-900 leading-tight tracking-tight">
-                                    Hey {firstName} 👋
+                                    Hey{' '}
+                                    <span className="hero-gradient-word">{firstName}</span>{' '}
+                                    👋
                                 </h1>
                                 <button
                                     onClick={handleManualRefresh}
-                                    className={`p-2 rounded-xl bg-white border border-slate-200 text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-all active:scale-95 shadow-sm ${loading ? 'animate-spin text-blue-500' : ''}`}
+                                    className={`p-2 rounded-xl bg-white border border-slate-200 text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-all active:scale-95 shadow-sm ${manualPageRefresh ? 'animate-spin text-blue-500' : ''}`}
                                     title="Refresh Dashboard"
                                     type="button"
                                 >
@@ -187,7 +198,7 @@ const DashboardPage = () => {
                     <button
                         type="button"
                         onClick={() => setIsModalOpen(true)}
-                        className="flex-shrink-0 flex items-center gap-2 px-5 py-2.5 rounded-2xl text-white font-bold text-sm shadow-lg shadow-blue-500/25 active:scale-95 transition-all"
+                        className="btn-glow-primary flex-shrink-0 flex items-center gap-2 px-5 py-2.5 rounded-2xl text-white font-bold text-sm shadow-lg shadow-blue-500/25 active:scale-95 transition-transform"
                         style={{ background: 'var(--brand-grad)' }}
                     >
                         <IconPlus className="w-4 h-4" />
@@ -195,7 +206,7 @@ const DashboardPage = () => {
                     </button>
                 </header>
 
-                <div className="mb-6 px-4 py-3 rounded-2xl border border-slate-200/80 bg-white/60 text-sm text-slate-600 flex flex-wrap items-center gap-2">
+                <div className="demo-banner-accent mb-6 px-4 py-3 rounded-2xl text-sm text-slate-700 flex flex-wrap items-center gap-3">
                     <span className="font-bold text-slate-800">Demo wallet</span>
                     <span className="text-slate-400">·</span>
                     <span>Add and withdraw funds are simulated for this resume project — no real payments.</span>
@@ -203,7 +214,7 @@ const DashboardPage = () => {
 
                 <div className="dashboard-layout">
                     <div className="dashboard-layout__main">
-                        <section className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8" aria-label="Task overview">
+                        <section className="stagger-fade-in grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8" aria-label="Task overview">
                             <div className="dash-stat-card">
                                 <div className="dash-stat-card__icon" style={{ background: 'rgba(37,99,235,0.1)', color: '#2563eb' }}>
                                     <IconActivity className="w-5 h-5" />
@@ -243,7 +254,7 @@ const DashboardPage = () => {
                                     <p className="text-sm text-slate-500 font-medium">Loading your tasks…</p>
                                 </div>
                             ) : displayedTasks.length > 0 ? (
-                                <div className="tasks-grid">
+                                <div className="tasks-grid stagger-fade-in">
                                     {displayedTasks.map((task) => (
                                         <TaskCard
                                             key={task.id}
@@ -264,7 +275,7 @@ const DashboardPage = () => {
                                     <button
                                         type="button"
                                         onClick={() => setIsModalOpen(true)}
-                                        className="mt-6 px-6 py-2.5 rounded-xl text-sm font-bold text-white shadow-md shadow-blue-500/20 active:scale-95 transition-all"
+                                        className="btn-glow-primary mt-6 px-6 py-2.5 rounded-xl text-sm font-bold text-white shadow-md shadow-blue-500/25 active:scale-95 transition-transform"
                                         style={{ background: 'var(--brand-grad)' }}
                                     >
                                         + Create Task

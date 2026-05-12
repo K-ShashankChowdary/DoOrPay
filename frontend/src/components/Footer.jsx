@@ -10,7 +10,10 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-[1.2fr_1fr_1fr_1fr] gap-8 md:gap-10 items-start">
           <div className="flex flex-col gap-3 max-w-sm">
             <div className="flex items-center gap-2">
-              <div className="w-9 h-9 bg-gradient-to-tr from-red-600 to-red-500 rounded-xl flex items-center justify-center shadow-sm">
+              <div
+                className="nav-mark w-9 h-9 rounded-xl flex items-center justify-center"
+                style={{ background: 'var(--brand-grad)' }}
+              >
                 <span className="text-white font-black text-base">D</span>
               </div>
               <div className="flex flex-col">
@@ -37,8 +40,7 @@ const Footer = () => {
           <div className="space-y-3">
             <h3 className="text-sm font-black text-slate-900 tracking-wide uppercase">Company</h3>
             <div className="flex flex-col gap-2">
-              <Link to="/about" className="footer-link">About</Link>
-              <Link to="/contact" className="footer-link">Contact</Link>
+              <Link to="/contact" className="footer-link">About &amp; contact</Link>
             </div>
           </div>
 
@@ -47,7 +49,8 @@ const Footer = () => {
             <div className="flex flex-col gap-2">
               <Link to="/terms" className="footer-link">Terms & Conditions</Link>
               <Link to="/privacy" className="footer-link">Privacy Policy</Link>
-              <Link to="/refunds" className="footer-link">Refunds & Cancellations</Link>
+              <Link to="/shipping" className="footer-link">Shipping &amp; delivery</Link>
+              <Link to="/refunds" className="footer-link">Refunds &amp; cancellations</Link>
             </div>
           </div>
         </div>

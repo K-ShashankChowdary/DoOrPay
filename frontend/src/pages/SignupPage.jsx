@@ -35,14 +35,18 @@ const SignupPage = () => {
       return;
     }
 
+    const trimmedName = fullName.trim();
+    const trimmedFacing = customerFacingBusinessName.trim();
+    const trimmedLegalInput = legalBusinessName.trim();
+
     // Basic validation for Razorpay v2 requirements
-    if (fullName.trim().length < 4) {
+    if (trimmedName.length < 4) {
       setError("Full Name must be at least 4 characters long for account verification.");
       setLoading(false);
       return;
     }
 
-    const finalLegalName = (legalBusinessName || fullName).trim();
+    const finalLegalName = (trimmedLegalInput || trimmedName).trim();
     if (finalLegalName.length < 4) {
       setError("Legal Business Name must be at least 4 characters long.");
       setLoading(false);
@@ -50,13 +54,13 @@ const SignupPage = () => {
     }
 
     try {
-      await signup({ 
-        fullName, 
-        email, 
-        password, 
+      await signup({
+        fullName: trimmedName,
+        email: email.trim(),
+        password,
         phone: normalizedPhone,
         legalBusinessName: finalLegalName,
-        customerFacingBusinessName: (customerFacingBusinessName || fullName).trim()
+        customerFacingBusinessName: (trimmedFacing || trimmedName).trim(),
       });
       navigate("/dashboard", { replace: true });
     } catch (err) {
@@ -70,8 +74,8 @@ const SignupPage = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-slate-50/40">
-      <div className="flex-1 flex flex-col items-center justify-center p-4 py-12">
-        <div className="auth-card slide-in relative z-0 max-w-xl mx-auto">
+      <div className="auth-ambient relative flex-1 flex flex-col items-center justify-center overflow-hidden p-4 py-12">
+        <div className="auth-card relative z-[1] max-w-xl mx-auto w-full">
           <header className="auth-header">
             <p className="text-xs uppercase tracking-[0.25em] font-semibold text-[color:var(--brand-red)]">
               Create Account
@@ -213,7 +217,7 @@ const SignupPage = () => {
 
             <button
               type="submit"
-              className="btn btn-primary w-full py-4 text-base font-bold shadow-xl shadow-red-600/20 active:scale-[0.98] transition-all duration-200"
+              className="btn btn-glow-primary btn-primary w-full py-4 text-base font-bold shadow-xl shadow-cyan-500/25 active:scale-[0.98] transition-transform duration-200"
               disabled={loading}
             >
               {loading ? (

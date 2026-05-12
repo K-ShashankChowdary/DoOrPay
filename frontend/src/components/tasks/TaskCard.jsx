@@ -76,7 +76,10 @@ const STATUS = {
 const TaskCard = ({ task, onRefetch }) => {
   const { user } = useAuth();
   const { id, title, description, stakeAmount, deadline, status } = task;
-  
+
+  const deadlineDate = new Date(deadline);
+  const deadlineOk = Number.isFinite(deadlineDate.getTime());
+
   const [isInitializing, setIsInitializing] = useState(false);
   const [error, setError] = useState(null);
 
@@ -92,7 +95,7 @@ const TaskCard = ({ task, onRefetch }) => {
 
   // Auto-refresh when the deadline exactly hits
   useEffect(() => {
-    if (status === "ACTIVE") {
+    if (status === "ACTIVE" && deadlineOk) {
       const msUntilDeadline = new Date(deadline).getTime() - Date.now();
       if (msUntilDeadline > 0 && msUntilDeadline <= 2147483647) {
         const timer = setTimeout(() => {
@@ -101,7 +104,7 @@ const TaskCard = ({ task, onRefetch }) => {
         return () => clearTimeout(timer);
       }
     }
-  }, [deadline, status, onRefetch]);
+  }, [deadline, deadlineOk, status, onRefetch]);
 
   const taskCreatorId = typeof task.creator === 'object' ? task.creator?.id : task.creatorId || task.creator;
   const isCreator =
@@ -110,7 +113,10 @@ const TaskCard = ({ task, onRefetch }) => {
     taskCreatorId != null &&
     String(user.id) === String(taskCreatorId);
 
-  const isExpiredPending = new Date(deadline) < new Date() && (status === "PENDING_PAYMENT" || status === "PENDING_DEPOSIT");
+  const isExpiredPending =
+    deadlineOk &&
+    deadlineDate < new Date() &&
+    (status === "PENDING_PAYMENT" || status === "PENDING_DEPOSIT");
   
   const cfg = isExpiredPending ? {
     label: "Expired",
@@ -119,12 +125,12 @@ const TaskCard = ({ task, onRefetch }) => {
     pulse: false,
   } : (STATUS[status] || STATUS.PENDING_DEPOSIT);
   
-  const deadlineDate = new Date(deadline);
-  const isOverdue = deadlineDate < new Date() && status === "ACTIVE";
+  const isOverdue =
+    deadlineOk && deadlineDate < new Date() && status === "ACTIVE";
 
   const deadlineHint = useMemo(() => {
     const t = new Date();
-    if (status !== "ACTIVE") return null;
+    if (status !== "ACTIVE" || !deadlineOk) return null;
     const end = new Date(deadline);
     if (end < t) {
       return { tone: "danger", text: "Deadline passed — settlement runs automatically." };
@@ -136,7 +142,7 @@ const TaskCard = ({ task, onRefetch }) => {
     }
     return { tone: "calm", text: `Due ${dist}`, sub: "Upload proof before the deadline to keep your stake." };
   // eslint-disable-next-line react-hooks/exhaustive-deps -- timeTick forces countdown text refresh every 30s
-  }, [status, deadline, timeTick]);
+  }, [status, deadline, deadlineOk, timeTick]);
 
   // Force close the proof modal if the deadline hits while it's open
   useEffect(() => {
@@ -247,8 +253,12 @@ const TaskCard = ({ task, onRefetch }) => {
             </div>
             <div>
               <p className="task-meta-item__label">Due</p>
-              <p className="task-meta-item__value">{format(deadlineDate, "MMM dd, yyyy")}</p>
-              <p className="task-meta-item__sub">{format(deadlineDate, "HH:mm")}</p>
+              <p className="task-meta-item__value">
+                {deadlineOk ? format(deadlineDate, "MMM dd, yyyy") : "—"}
+              </p>
+              <p className="task-meta-item__sub">
+                {deadlineOk ? format(deadlineDate, "HH:mm") : "Invalid date"}
+              </p>
             </div>
           </div>
         </div>

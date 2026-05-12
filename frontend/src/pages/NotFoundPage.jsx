@@ -3,8 +3,8 @@ import { IconSearch } from '../components/icons';
 
 const NotFoundPage = () => {
     return (
-        <div className="page-shell grid place-items-center min-h-[100dvh] px-4 sm:px-6 text-center fade-in">
-            <div className="modal-panel max-w-lg w-full space-y-10 py-12 px-6 sm:px-10">
+        <div className="page-shell grid place-items-center min-h-[100dvh] px-4 sm:px-6 text-center">
+            <div className="page-intro modal-panel max-w-lg w-full space-y-10 py-12 px-6 sm:px-10">
                 <div className="flex justify-center">
                     <div className="inline-flex items-center justify-center rounded-2xl bg-white/90 p-4 shadow-[var(--elev-2)] ring-1 ring-slate-200/80">
                         <IconSearch className="w-10 h-10 text-[color:var(--brand-red)]" aria-hidden />

@@ -35,8 +35,8 @@ const LoginPage = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-slate-50/40">
-      <div className="flex-1 flex flex-col items-center justify-center p-4 py-12">
-        <div className="auth-card slide-in relative z-0">
+      <div className="auth-ambient relative flex-1 flex flex-col items-center justify-center overflow-hidden p-4 py-12">
+        <div className="auth-card relative z-[1] w-full">
         <header className="auth-header">
           <p className="text-xs uppercase tracking-[0.25em] font-semibold text-[color:var(--brand-red)]">
             Sign In
@@ -99,7 +99,7 @@ const LoginPage = () => {
 
           <button
             type="submit"
-            className="btn btn-primary w-full"
+            className="btn btn-glow-primary btn-primary w-full"
             disabled={loading}
           >
             {loading ? (

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import contractService from '../services/contract.service';
 import { IconCheckCircle, IconAlertCircle } from './icons';
@@ -6,6 +6,15 @@ import { IconCheckCircle, IconAlertCircle } from './icons';
 const ReviewProofModal = ({ task, isOpen, onClose, onSuccess }) => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState('');
+
+    useEffect(() => {
+        if (!isOpen) return undefined;
+        const onKey = (e) => {
+            if (e.key === 'Escape' && !isSubmitting) onClose();
+        };
+        window.addEventListener('keydown', onKey);
+        return () => window.removeEventListener('keydown', onKey);
+    }, [isOpen, isSubmitting, onClose]);
 
     if (!isOpen || !task) return null;
 
@@ -25,11 +34,23 @@ const ReviewProofModal = ({ task, isOpen, onClose, onSuccess }) => {
     };
 
     return createPortal(
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm slide-in">
-            <div className="modal-panel w-full max-w-lg flex flex-col gap-6">
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm slide-in"
+            role="presentation"
+            onClick={(e) => {
+                if (!isSubmitting && e.target === e.currentTarget) onClose();
+            }}
+        >
+            <div
+                className="modal-panel w-full max-w-lg flex flex-col gap-6"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="review-proof-title"
+                onClick={(e) => e.stopPropagation()}
+            >
                 <div className="flex items-center justify-between">
                     <div>
-                        <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Review Proof</h2>
+                        <h2 id="review-proof-title" className="text-2xl font-bold text-gray-900 tracking-tight">Review Proof</h2>
                         <p className="text-sm text-slate-500 mt-1">Review the creator's submitted work</p>
                     </div>
                     <button onClick={onClose} disabled={isSubmitting} className="modal-close">

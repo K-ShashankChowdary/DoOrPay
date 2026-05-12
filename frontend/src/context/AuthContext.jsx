@@ -88,7 +88,18 @@ export const AuthProvider = ({ children }) => {
 
     return (
         <AuthContext.Provider value={value}>
-            {!loading && children}
+            {loading ? (
+                <div className="page-shell grid place-items-center min-h-[100dvh] px-4 sm:px-6 bg-slate-50/40">
+                    <div className="session-splash-card flex flex-col items-center gap-6 text-center px-10 py-12 rounded-[22px] border border-slate-200/70 bg-white/80 shadow-[var(--elev-2)] backdrop-blur-md">
+                        <span className="spinner w-12 h-12" aria-hidden />
+                        <p className="text-slate-600 font-medium text-sm max-w-[20rem] leading-relaxed">
+                            Checking your session…
+                        </p>
+                    </div>
+                </div>
+            ) : (
+                children
+            )}
         </AuthContext.Provider>
     );
 };

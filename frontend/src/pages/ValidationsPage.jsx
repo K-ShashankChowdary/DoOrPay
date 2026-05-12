@@ -57,10 +57,10 @@ const ValidationsPage = () => {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
                 {/* ── Page Header ──────────────────────────────── */}
-                <header className="flex flex-wrap items-start sm:items-center justify-between gap-3 mb-8">
+                <header className="page-intro flex flex-wrap items-start sm:items-center justify-between gap-3 mb-8">
                     <div>
                         <h1 className="text-2xl sm:text-3xl font-black text-slate-900 leading-tight tracking-tight">
-                            Validate Tasks
+                            <span className="hero-gradient-word">Validate</span> Tasks
                         </h1>
                         <p className="text-sm text-slate-500 mt-1">
                             Review proof submitted by creators — approve or reject.
@@ -76,14 +76,14 @@ const ValidationsPage = () => {
                             await fetchTasks();
                             setRefreshing(false);
                         }}
-                        className="px-4 py-2 rounded-xl text-xs font-bold text-slate-700 bg-white border border-slate-200 shadow-sm hover:bg-slate-50 transition-all"
+                        className="px-4 py-2 rounded-xl text-xs font-bold text-slate-700 bg-white/90 border border-slate-200/90 shadow-sm hover:bg-slate-50 hover:border-cyan-200/80 hover:shadow-md active:scale-[0.98] transition-all duration-200"
                     >
                         {refreshing ? 'Refreshing...' : 'Refresh'}
                     </button>
                 </header>
 
                 {/* ── Stats Row ─────────────────────────────────── */}
-                <section className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8" aria-label="Validation overview">
+                <section className="stagger-fade-in grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8" aria-label="Validation overview">
                     <div className="dash-stat-card">
                         <div className="dash-stat-card__icon" style={{ background: 'rgba(14,165,233,0.1)', color: '#0284c7' }}>
                             <IconActivity className="w-5 h-5" />
@@ -131,7 +131,7 @@ const ValidationsPage = () => {
                         </p>
                     </div>
                 ) : (
-                    <div className="tasks-grid">
+                    <div className="tasks-grid stagger-fade-in">
                         {validationTasks.map(task => (
                             <TaskCard key={task.id} task={task} onRefetch={fetchTasks} />
                         ))}
