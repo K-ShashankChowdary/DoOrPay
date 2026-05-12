@@ -1,8 +1,7 @@
 import { Router } from "express";
 import { 
     createContract, 
-    generatePaymentOrder, 
-    verifyPayment,
+    activateTask, 
     getUserContracts,
     getContractById,
     uploadProof,
@@ -10,7 +9,7 @@ import {
     getUploadSignature,
     deleteContract
 } from "../controllers/contract.controller.js";
-import { verifyJWT } from "../middleware/auth.middleware.js";
+import { verifyJWT } from "../middlewares/auth.middleware.js";
 
 const router = Router();
 
@@ -21,13 +20,9 @@ router.use(verifyJWT);
 // POST: /api/v1/contracts/new
 router.route("/new").post(createContract);
 
-// Generate the Razorpay Order (Triggered when user clicks "Pay")
-// POST: /api/v1/contracts/pay/:contractId
-router.route("/pay/:contractId").post(generatePaymentOrder);
-
-// Verify the Razorpay Signature (Triggered after successful checkout)
-// POST: /api/v1/contracts/verify-payment
-router.route("/verify-payment").post(verifyPayment);
+// Lock stake from wallet and activate task (demo)
+// POST: /api/v1/contracts/activate/:contractId
+router.route("/activate/:contractId").post(activateTask);
 
 // Get Cloudinary Upload Signature
 // GET: /api/v1/contracts/upload-signature

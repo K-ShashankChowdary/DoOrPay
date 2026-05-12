@@ -36,7 +36,7 @@ const CreateTaskModal = ({ onClose, onTaskCreated }) => {
       setIsSearching(true);
       try {
         const res = await contractService.searchValidators(searchQuery);
-        setSearchResults(res.data);
+        setSearchResults(res.data.users || []);
       } catch (err) {
         console.error("Failed to search validators", err);
       } finally {
@@ -83,7 +83,7 @@ const CreateTaskModal = ({ onClose, onTaskCreated }) => {
         description: formData.description,
         stakeAmount: Number(formData.stakeAmount),
         deadline: formData.deadline,
-        validator: formData.validator._id,
+        validatorId: formData.validator.id,
       });
       onTaskCreated(result.data.contract);
       onClose();
@@ -261,28 +261,31 @@ const CreateTaskModal = ({ onClose, onTaskCreated }) => {
                   )}
 
                   {searchResults.length > 0 && (
-                    <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200/90 shadow-[var(--elev-3)] rounded-xl overflow-hidden z-20 ring-1 ring-slate-900/5">
+                    <ul 
+                      className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200/90 shadow-[var(--elev-3)] rounded-xl overflow-hidden z-20 ring-1 ring-slate-900/5"
+                      role="listbox"
+                      aria-live="polite"
+                    >
                       {searchResults.map((user) => (
-                        <div
-                          key={user._id}
-                          className="p-3 hover:bg-slate-50/90 cursor-pointer flex justify-between items-center gap-3 transition-colors border-b border-slate-100 last:border-0"
-                          onClick={() => handleSelectValidator(user)}
-                        >
-                          <div>
-                            <p className="font-medium text-slate-800 text-sm">
-                              {user.fullName}
-                            </p>
-                            <p className="text-xs text-slate-500">{user.email}</p>
-                          </div>
+                        <li key={user.id} role="option" aria-selected="false">
                           <button
                             type="button"
-                            className="btn btn-secondary !py-1 !px-3 !text-xs"
+                            className="w-full text-left p-3 hover:bg-slate-50/90 focus:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[color:var(--brand-red)] cursor-pointer flex justify-between items-center gap-3 transition-colors border-b border-slate-100 last:border-0"
+                            onClick={() => handleSelectValidator(user)}
                           >
-                            Select
+                            <div>
+                              <p className="font-medium text-slate-800 text-sm">
+                                {user.fullName}
+                              </p>
+                              <p className="text-xs text-slate-500">{user.email}</p>
+                            </div>
+                            <span className="btn btn-secondary !py-1 !px-3 !text-xs pointer-events-none">
+                              Select
+                            </span>
                           </button>
-                        </div>
+                        </li>
                       ))}
-                    </div>
+                    </ul>
                   )}
                 </div>
               )}

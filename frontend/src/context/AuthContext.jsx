@@ -18,11 +18,9 @@ export const AuthProvider = ({ children }) => {
 
     const checkAuthStatus = async () => {
         try {
-            // Attempt to restore session
             const response = await api.post('/users/refresh-token');
             setUser(response.data.data.user);
         } catch {
-            // No valid session, or token expired/invalid
             setUser(null);
         } finally {
             setLoading(false);
@@ -47,21 +45,32 @@ export const AuthProvider = ({ children }) => {
 
     const logout = async () => {
         try {
-            // Notify server to clear refresh token
             await api.post('/users/logout');
         } catch (error) {
             console.error('Logout failed:', error);
         } finally {
-            // Always clear the local session state
             setUser(null);
         }
     };
 
-    const linkRazorpay = async (payload = {}) => {
-        const response = await api.post('/users/link-razorpay', payload);
-        const { razorpayLinkedAccountId } = response.data.data;
-        setUser(prev => ({ ...prev, razorpayLinkedAccountId }));
-        return response.data;
+    const getBalance = async () => {
+        const response = await api.get('/users/balance');
+        return response?.data;
+    };
+
+    const createTopupSession = async (amount) => {
+        const response = await api.post('/users/wallet/topup', { amount });
+        return response?.data;
+    };
+
+    const requestWithdrawal = async (amount) => {
+        const response = await api.post('/users/wallet/withdraw', { amount });
+        return response?.data;
+    };
+
+    const getWithdrawalHistory = async () => {
+        const response = await api.get('/users/wallet/withdrawals');
+        return response?.data;
     };
 
     const value = {
@@ -70,7 +79,10 @@ export const AuthProvider = ({ children }) => {
         login,
         logout,
         signup,
-        linkRazorpay,
+        getBalance,
+        createTopupSession,
+        requestWithdrawal,
+        getWithdrawalHistory,
         setUser
     };
 

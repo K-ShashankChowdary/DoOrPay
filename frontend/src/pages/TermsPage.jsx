@@ -8,14 +8,14 @@ const TermsPage = () => {
         <div>
           <h2 className="text-xl font-bold mb-3">1) Agreement to Terms</h2>
           <p>
-            By accessing or using DoOrDie (the “Platform”), you agree to these Terms and to any policies referenced here. If you do not agree, please stop using the Platform.
+            By accessing or using DoOrPay (the “Platform”), you agree to these Terms and to any policies referenced here. If you do not agree, please stop using the Platform.
           </p>
         </div>
 
         <div>
           <h2 className="text-xl font-bold mb-3">2) What We Provide</h2>
           <p>
-            DoOrDie lets you create commitments with a monetary stake held in escrow, nominate a validator, submit proof, and route payouts automatically when tasks succeed or fail.
+            DoOrPay lets you create commitments with a monetary stake held in escrow, nominate a validator, submit proof, and route payouts automatically when tasks succeed or fail.
           </p>
         </div>
 
@@ -31,9 +31,9 @@ const TermsPage = () => {
         <div>
           <h2 className="text-xl font-bold mb-3">4) Payments, Escrow, and Payouts</h2>
           <ul className="list-disc ml-5 space-y-2 text-slate-600">
-            <li>Payments and payouts run through Razorpay Route. By funding a task, you authorize us to hold and disburse funds per task outcome.</li>
-            <li>Creators must pay the stake before a task becomes active. Validators must have a linked Razorpay Route account to receive payouts.</li>
-            <li>Fees (if any) are shown at checkout; bank/card charges may apply.</li>
+            <li>This deployment uses a simulated wallet for demonstration. Balances, stakes, and payouts are not real money and do not connect to a payment processor.</li>
+            <li>Creators lock stake from their demo wallet before a task becomes active. Validators receive simulated payouts when outcomes are recorded.</li>
+            <li>There is no real checkout, card capture, or bank transfer in this demo build.</li>
           </ul>
         </div>
 

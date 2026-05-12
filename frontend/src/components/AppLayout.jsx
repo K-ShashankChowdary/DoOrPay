@@ -14,10 +14,11 @@ const AppLayout = () => {
             try {
                 const res = await contractService.getUserContracts();
                 const tasks = res.data.contracts || [];
-                const count = tasks.filter(t => 
-                    (t.validator === user?._id || t.validator?._id === user?._id) && 
-                    t.status === 'VALIDATING'
-                ).length;
+                const count = tasks.filter(t => {
+                    if (!t) return false;
+                    const validatorId = typeof t.validator === 'object' ? t.validator?.id : t.validator;
+                    return validatorId?.toString() === user?.id?.toString() && t.status === 'VALIDATING';
+                }).length;
                 setValidationCount(count);
             } catch {
                 console.error("Failed to fetch notification badge");
@@ -38,10 +39,10 @@ const AppLayout = () => {
                         {/* Logo & Navigation */}
                         <div className="flex items-center gap-8 min-w-0">
                             <Link to="/dashboard" className="flex-shrink-0 flex items-center gap-2 group cursor-pointer">
-                                <div className="w-8 h-8 bg-red-600 rounded-xl flex items-center justify-center transform group-hover:scale-105 transition-transform duration-300 shadow-sm">
+                                <div className="w-8 h-8 rounded-xl flex items-center justify-center transform group-hover:scale-105 transition-transform duration-300 shadow-sm" style={{ background: 'var(--brand-grad)' }}>
                                     <span className="text-white font-black text-lg leading-none">D</span>
                                 </div>
-                                <span className="text-xl font-black text-slate-900 tracking-tight">DoOrDie</span>
+                                <span className="text-xl font-black text-slate-900 tracking-tight">DoOrPay</span>
                             </Link>
 
                             <nav className="hidden md:flex items-center space-x-1" aria-label="Global">
@@ -102,7 +103,7 @@ const AppLayout = () => {
                     to="/dashboard"
                     className={({ isActive }) =>
                         `flex-1 flex flex-col items-center justify-center py-2 px-1 rounded-xl text-[11px] font-bold transition-all duration-300 ${
-                            isActive ? 'text-red-600 bg-red-50 shadow-sm' : 'text-slate-500 hover:text-slate-800'
+                            isActive ? 'text-blue-700 bg-blue-50 shadow-sm' : 'text-slate-500 hover:text-slate-800'
                         }`
                     }
                 >
@@ -113,7 +114,7 @@ const AppLayout = () => {
                     to="/validations"
                     className={({ isActive }) =>
                         `relative flex-1 flex flex-col items-center justify-center py-2 px-1 rounded-xl text-[11px] font-bold transition-all duration-300 ${
-                            isActive ? 'text-red-600 bg-red-50 shadow-sm' : 'text-slate-500 hover:text-slate-800'
+                            isActive ? 'text-blue-700 bg-blue-50 shadow-sm' : 'text-slate-500 hover:text-slate-800'
                         }`
                     }
                 >

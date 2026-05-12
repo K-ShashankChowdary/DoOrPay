@@ -14,14 +14,14 @@ const Footer = () => {
                 <span className="text-white font-black text-base">D</span>
               </div>
               <div className="flex flex-col">
-                <span className="text-lg font-black text-slate-900 leading-tight">DoOrDie</span>
+                <span className="text-lg font-black text-slate-900 leading-tight">DoOrPay</span>
                 <span className="text-xs font-semibold text-slate-500">Build habits that stick</span>
               </div>
             </div>
             <p className="text-sm text-slate-600 leading-relaxed">
               Ship faster with accountability. Set a stake, pick a validator, and stay on track with clear outcomes.
             </p>
-            <span className="text-xs text-slate-400 font-semibold">© {currentYear} DoOrDie. All rights reserved.</span>
+            <span className="text-xs text-slate-400 font-semibold">© {currentYear} DoOrPay. All rights reserved.</span>
           </div>
 
           <div className="space-y-3">

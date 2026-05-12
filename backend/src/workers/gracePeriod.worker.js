@@ -1,82 +1,63 @@
-import { Worker, Queue } from 'bullmq';
-import { Contract } from '../models/contract.model.js';
-import mongoose from 'mongoose';
-import Redis from 'ioredis';
-import Razorpay from 'razorpay';
+import { Worker } from "bullmq";
+import { redisService as connection } from "../services/redis.service.js";
+import { walletService } from "../services/wallet.service.js";
+import { ApiError } from "../utils/ApiError.js";
+import prisma from "../db/prisma.js";
+import logger from "../utils/logger.js";
 
-// BullMQ Connection Setup
-const connection = new Redis(process.env.REDIS_URL || 'redis://127.0.0.1:6379', {
-    maxRetriesPerRequest: null,
-});
+/**
+ * GRACE PERIOD WORKER — validator ghosted for 24h after proof → creator wins (refund).
+ *
+ * Scheduled when proof is uploaded (contract.controller). Idempotent: if the validator
+ * already decided, or the contract left VALIDATING, we skip.
+ */
+const gracePeriodWorker = new Worker(
+    "validator-grace-period",
+    async (job) => {
+        const { contractId } = job.data;
+        logger.info(`Grace period job start`, { contractId, jobId: job.id });
 
-// Initialize Razorpay
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID,
-  key_secret: process.env.RAZORPAY_KEY_SECRET,
-});
-
-// The Queue Instance
-export const validatorGraceQueue = new Queue('validator-grace-period', { connection });
-
-// The Worker Instance: Auto-refunds creator if validator fails to evaluate proof within 24 hours of deadline
-export const gracePeriodWorker = new Worker('validator-grace-period', async job => {
-    const { contractId } = job.data;
-    console.log(`[Worker] Checking grace period for contract: ${contractId}`);
-    
-    // Mongoose ACID Transaction
-    const session = await mongoose.startSession();
-    session.startTransaction();
-    
-    try {
-        const contract = await Contract.findById(contractId).session(session);
-        
-        if (!contract) {
-            console.warn(`[Worker] Contract ${contractId} not found`);
-            await session.abortTransaction();
-            return;
-        }
-
-        // If the contract is still stuck in VALIDATING state
-        if (contract.status === "VALIDATING") {
-            
-            // 1. Process Full Refund to Creator
-            if (contract.razorpayPaymentId) {
-                // 1. Process Full Refund to Creator with Idempotency protection
-                await razorpay.payments.refund(contract.razorpayPaymentId, {
-                    notes: {
-                        reason: "Validator no-show grace period expired. Auto-refunding creator.",
-                        contractId: contract._id.toString()
-                    },
-                    speed: "optimum" // Fast refund for creator
-                }, {
-                    "X-Refund-Idempotency": `refund_${contract._id.toString()}`
-                });
-                console.log(`[Worker] Refund issued for payment ${contract.razorpayPaymentId}`);
+        try {
+            const contract = await prisma.contract.findUnique({ where: { id: contractId } });
+            if (!contract) {
+                logger.info(`Grace skip: contract deleted`, { contractId });
+                return;
             }
 
-            // 2. Mark as completed (Creator wins by default)
-            contract.status = "COMPLETED";
-            await contract.save({ session, validateBeforeSave: false });
-            console.log(`[Worker] Contract ${contractId} grace period expired. Status automatically updated to COMPLETED.`);
-            
-        } else {
-             console.log(`[Worker] Contract ${contractId} is in status ${contract.status}. No grace period action needed.`);
+            if (contract.status !== "VALIDATING") {
+                logger.info(`Grace skip: not VALIDATING`, { contractId, status: contract.status });
+                return;
+            }
+
+            try {
+                await walletService.settleContract(contractId, true);
+                logger.info(`Grace settlement complete (creator refund)`, { contractId });
+            } catch (error) {
+                if (error instanceof ApiError && error.statusCode === 409) {
+                    logger.info(`Grace settle idempotent skip`, { contractId, message: error.message });
+                    return;
+                }
+                throw error;
+            }
+        } catch (error) {
+            logger.error(`Grace period worker failure`, {
+                contractId,
+                error: error?.stack || error?.message,
+            });
+            throw error;
         }
+    },
+    { connection, skipConfigCheck: true }
+);
 
-        await session.commitTransaction();
-    } catch (error) {
-        console.error(`[Worker] Failed assessing grace period for contract ${contractId}:`, error);
-        await session.abortTransaction();
-        throw error;
-    } finally {
-        session.endSession();
-    }
-}, { connection });
-
-gracePeriodWorker.on('completed', job => {
-    console.log(`[Worker] Grace period check job ${job.id} has completed!`);
+gracePeriodWorker.on("completed", (job) => {
+    logger.info(`Grace period job completed`, { jobId: job.id });
 });
 
-gracePeriodWorker.on('failed', (job, err) => {
-    console.error(`[Worker] Grace period check job ${job?.id} has failed: ${err.message}`);
+gracePeriodWorker.on("failed", (job, err) => {
+    logger.error(`Grace period job failed`, { jobId: job?.id, error: err?.message });
 });
+
+console.log("[Worker] Grace Period worker started and listening to 'validator-grace-period'...");
+
+export { gracePeriodWorker };

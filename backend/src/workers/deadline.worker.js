@@ -1,88 +1,98 @@
-import { Worker, Queue } from 'bullmq';
-import { Contract } from '../models/contract.model.js';
-import mongoose from 'mongoose';
-import Redis from 'ioredis';
-import Razorpay from 'razorpay';
+import { Worker } from "bullmq";
+import { redisService as connection } from "../services/redis.service.js";
+import { walletService } from "../services/wallet.service.js";
+import { ApiError } from "../utils/ApiError.js";
+import prisma from "../db/prisma.js";
+import logger from "../utils/logger.js";
 
-// BullMQ Connection Setup
-// We use ioredis to establish a robust connection to our Redis instance.
-// maxRetriesPerRequest: null is required by BullMQ to prevent connection timeouts.
-const connection = new Redis(process.env.REDIS_URL || 'redis://127.0.0.1:6379', {
-    maxRetriesPerRequest: null,
-});
+/** Normal proof submission (not the internal deadline bridge state). */
+function hasProofSubmitted(contract) {
+    const text = contract.proofText?.trim();
+    const imgs = Array.isArray(contract.proofImages) && contract.proofImages.length > 0;
+    const links = Array.isArray(contract.proofLinks) && contract.proofLinks.length > 0;
+    return !!(text || imgs || links);
+}
 
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID,
-  key_secret: process.env.RAZORPAY_KEY_SECRET,
-});
+/**
+ * DEADLINE WORKER — no proof by deadline → creator forfeits (validator + platform fee).
+ *
+ * settleContract only accepts VALIDATING; we bridge ACTIVE → VALIDATING when the deadline
+ * passes with no proof. If settlement fails after the bridge, retries must still settle
+ * from VALIDATING + empty proof (recovery).
+ */
+const deadlineWorker = new Worker(
+    "task-deadline-queue",
+    async (job) => {
+        const { contractId } = job.data;
+        logger.info(`Deadline job start`, { contractId, jobId: job.id });
 
-// The Queue Instance: This allows other files (like contract.controller.js) 
-// to push new delayed jobs into the queue.
-export const contractDeadlineQueue = new Queue('contract-deadlines', { connection });
-
-// The Worker Instance: Constantly polls Redis for jobs that are ready to process.
-// When a delayed job reaches its execution time (the contract's deadline), this code runs automatically.
-export const deadlineWorker = new Worker('contract-deadlines', async job => {
-    const { contractId } = job.data;
-    console.log(`[Worker] Checking deadline for contract: ${contractId}`);
-    
-    // We initiate a Mongoose ACID Transaction to safely evaluate the contract's outcome.
-    const session = await mongoose.startSession();
-    session.startTransaction();
-    
-    try {
-        // Find the contract within the atomic lock
-        const contract = await Contract.findById(contractId).populate("validator").session(session);
-        
-        if (!contract) {
-            console.warn(`[Worker] Contract ${contractId} not found`);
-            await session.abortTransaction();
-            return;
-        }
-
-        // Core Game Logic: 
-        // If the contract is exactly in 'ACTIVE' status when the deadline arrives, 
-        // it means the creator completely failed to upload any proof in time.
-        // If it was 'VALIDATING' (proof uploaded), 'COMPLETED', or 'FAILED', we ignore it.
-        if (contract.status === "ACTIVE") {
-            contract.status = "FAILED";
-            await contract.save({ session, validateBeforeSave: false });
-            console.log(`[Worker] Contract ${contractId} missed deadline. Status automatically updated to FAILED.`);
-            
-            if (contract.validator && contract.validator.razorpayLinkedAccountId) {
-                // Using X-Razorpay-Idempotency to prevent double-payouts on BullMQ job retries
-                await razorpay.transfers.create({
-                    account: contract.validator.razorpayLinkedAccountId,
-                    amount: Math.round(contract.stakeAmount * 100),
-                    currency: "INR",
-                    notes: { reason: "Creator missed deadline, validator earns stake.", contractId: contract._id.toString() }
-                }, {
-                    "X-Razorpay-Idempotency": `transfer_${contract._id.toString()}`
-                });
-                console.log(`[Worker] Transferred stake to validator ${contract.validator._id}`);
-            } else {
-                console.warn(`[Worker] Validator ${contract.validator?._id} has no linked Razorpay account for payout.`);
+        try {
+            let contract = await prisma.contract.findUnique({ where: { id: contractId } });
+            if (!contract) {
+                logger.info(`Deadline skip: contract deleted`, { contractId });
+                return;
             }
-        } else {
-             console.log(`[Worker] Contract ${contractId} is in status ${contract.status}. No automatic failure needed.`);
+
+            const deadlineMs = new Date(contract.deadline).getTime();
+            if (deadlineMs > Date.now() + 3000) {
+                logger.warn(`Deadline job ran before deadline`, { contractId, deadline: contract.deadline });
+                return;
+            }
+
+            if (contract.status === "ACTIVE") {
+                const transitioned = await prisma.contract.updateMany({
+                    where: { id: contractId, status: "ACTIVE" },
+                    data: { status: "VALIDATING" },
+                });
+                if (transitioned.count !== 1) {
+                    contract = await prisma.contract.findUnique({ where: { id: contractId } });
+                    if (!contract || contract.status !== "VALIDATING" || hasProofSubmitted(contract)) {
+                        logger.info(`Deadline skip: could not bridge ACTIVE (race or already settled)`, {
+                            contractId,
+                            status: contract?.status,
+                        });
+                        return;
+                    }
+                }
+            } else if (contract.status === "VALIDATING") {
+                if (hasProofSubmitted(contract)) {
+                    logger.info(`Deadline skip: proof exists — validator / grace path`, { contractId });
+                    return;
+                }
+            } else {
+                logger.info(`Deadline skip: status`, { contractId, status: contract.status });
+                return;
+            }
+
+            try {
+                await walletService.settleContract(contractId, false);
+                logger.info(`Deadline settlement complete`, { contractId });
+            } catch (err) {
+                if (err instanceof ApiError && err.statusCode === 409) {
+                    logger.info(`Deadline settle idempotent skip`, { contractId, message: err.message });
+                    return;
+                }
+                throw err;
+            }
+        } catch (error) {
+            logger.error(`Deadline processing failure`, {
+                contractId,
+                error: error?.stack || error?.message,
+            });
+            throw error;
         }
+    },
+    { connection, skipConfigCheck: true }
+);
 
-        // Make it durable
-        await session.commitTransaction();
-    } catch (error) {
-        console.error(`[Worker] Failed assessing contract ${contractId}:`, error);
-        await session.abortTransaction();
-        // Throwing the error alerts BullMQ to retry the job according to its retry strategy
-        throw error;
-    } finally {
-        session.endSession();
-    }
-}, { connection });
-
-deadlineWorker.on('completed', job => {
-    console.log(`[Worker] Deadline check job ${job.id} has completed!`);
+deadlineWorker.on("completed", (job) => {
+    logger.info(`Deadline job completed`, { jobId: job.id });
 });
 
-deadlineWorker.on('failed', (job, err) => {
-    console.error(`[Worker] Deadline check job ${job?.id} has failed with ${err.message}`);
+deadlineWorker.on("failed", (job, err) => {
+    logger.error(`Deadline job failed`, { jobId: job?.id, error: err?.message });
 });
+
+console.log("[Worker] Deadline worker started and listening to 'task-deadline-queue'...");
+
+export { deadlineWorker };

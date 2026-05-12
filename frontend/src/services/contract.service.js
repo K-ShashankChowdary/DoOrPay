@@ -13,21 +13,27 @@ const contractService = {
         return response.data;
     },
 
-    // Draft a new contract, pushing it into the PENDING_PAYMENT state
+    // Draft a new contract in PENDING_DEPOSIT state
     createContract: async (contractData) => {
         const response = await api.post('/contracts/new', contractData);
         return response.data;
     },
 
-    // Step 1 of payment: Ask the backend to create a Razorpay Order for this contract
-    generatePaymentOrder: async (contractId) => {
-        const response = await api.post(`/contracts/pay/${contractId}`);
+    // Activate task by locking stake from wallet (or return needsTopUp)
+    activateContract: async (contractId) => {
+        const response = await api.post(`/contracts/activate/${contractId}`);
         return response.data;
     },
 
-    // Step 2 of payment: Send Razorpay's callback data to the backend for HMAC verification
-    verifyPayment: async (paymentData) => {
-        const response = await api.post('/contracts/verify-payment', paymentData);
+    // Legacy shortcut: create task via alternate API (not used by main dashboard flow)
+    startTask: async (taskData) => {
+        const response = await api.post('/tasks/start', taskData);
+        return response.data;
+    },
+
+    // Delete a contract/task
+    deleteContract: async (contractId) => {
+        const response = await api.delete(`/contracts/${contractId}`);
         return response.data;
     },
 
